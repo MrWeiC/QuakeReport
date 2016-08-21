@@ -4,18 +4,18 @@ package com.example.android.quakereport;
  * Created by weichen on 8/17/16.
  */
 public class Earthquake {
-    private String mMag;
+    private double mMag;
     private String mLocation;
-    private String mDate;
+    private long mTimeInMilliseconds;
 
-    public Earthquake(String mMag,String mLocation, String mDate){
+    public Earthquake(double mMag,String mLocation, long mTimeInMilliseconds){
         this.mMag=mMag;
         this.mLocation=mLocation;
-        this.mDate=mDate;
+        this.mTimeInMilliseconds = mTimeInMilliseconds;
     }
 
 
-    public String getmMag() {
+    public double getmMag() {
         return mMag;
     }
 
@@ -23,7 +23,7 @@ public class Earthquake {
         return mLocation;
     }
 
-    public String getmDate() {
-        return mDate;
+    public long getmTimeInMilliseconds() {
+        return mTimeInMilliseconds;
     }
 }

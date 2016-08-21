@@ -14,12 +14,21 @@
         android:layout_weight="1"
         tools:text="7.2"/>
 
+
     <TextView
-        android:id="@+id/location"
+        android:id="@+id/offset"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        tools:text="Tokyo"/>
+        tools:text="74km NW of"/>
+
+    <TextView
+        android:id="@+id/primary_location"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        tools:text="Rumoi, Japan"/>
+
 
     <TextView
         android:id="@+id/date"
@@ -27,5 +36,12 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         tools:text="Feb 2,2016"/>
+
+    <TextView
+        android:id="@+id/time"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        tools:text="3:00 PM"/>
 
 </LinearLayout>
