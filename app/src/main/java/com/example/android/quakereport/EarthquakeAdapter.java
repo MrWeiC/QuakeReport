@@ -13,6 +13,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by weichen on 8/17/16.
@@ -20,7 +21,7 @@ import java.util.Date;
 public class EarthquakeAdapter extends ArrayAdapter<Earthquake> {
     private static final String LOG_TAG = EarthquakeAdapter.class.getSimpleName();
 
-    public EarthquakeAdapter(Activity context, ArrayList<Earthquake> earthquakes) {
+    public EarthquakeAdapter(Activity context, List<Earthquake> earthquakes) {
         super(context, 0, earthquakes);
     }
 

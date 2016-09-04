@@ -17,39 +17,48 @@ package com.example.android.quakereport;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class EarthquakeActivity extends AppCompatActivity {
 
+    /**
+     * URL for earthquake data from the USGS dataset
+     */
+    public static final String USGS_REQUEST_URL = "http://earthquake.usgs" +
+        ".gov/fdsnws/event/1/query?format=geojson&eventtype=earthquake&orderby=time&minmag=6" +
+        "&limit=10";
     public static final String LOG_TAG = EarthquakeActivity.class.getName();
-    public ListView earthquakeListView;
+
+    public List<Earthquake> earthquakes = new ArrayList<>();
+    private EarthquakeAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.earthquake_activity);
-        final ArrayList<Earthquake> earthquakes = QueryUtils.extractEarthquakes();
-        // Create a fake list of earthquake locations.
+        // Create a Async tasks to query the list of earthquake locations.
+        QueryEarthquakeAsyncTask task = new QueryEarthquakeAsyncTask();
+        task.execute(USGS_REQUEST_URL);
 
         // Find a reference to the {@link ListView} in the layout
-        earthquakeListView = (ListView) findViewById(R.id.list);
+        ListView earthquakeListView = (ListView) findViewById(R.id.list);
 
         // Create a new {@link ArrayAdapter} of earthquakes
-        EarthquakeAdapter adapter = new EarthquakeAdapter(this,  earthquakes);
-
-        // Set the adapter on the {@link ListView}
-        // so the list can be populated in the user interface
-        earthquakeListView.setAdapter(adapter);
+        mAdapter = new EarthquakeAdapter(this, earthquakes);
+        // earthquakeListView.setEmptyView(findViewById(R.id.empty_list_view));
+        earthquakeListView.setAdapter(mAdapter);
 
         //Set the listview lister that to monitor click
-        earthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+        earthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Earthquake earthquake = (Earthquake) parent.getItemAtPosition(position);
@@ -58,5 +67,46 @@ public class EarthquakeActivity extends AppCompatActivity {
                 startActivity(browserIntent);
             }
         });
+
+    }
+
+
+    /**
+     * Async task for the query for earthquake
+     */
+    public class QueryEarthquakeAsyncTask extends AsyncTask<String, Void, List<Earthquake>> {
+
+        @Override
+        protected List<Earthquake> doInBackground(String... urls) {
+            if (urls.length < 1 || urls[0] == null){
+                return null;
+            }
+            earthquakes = QueryUtils.fetchEarthquakeData(urls[0]);
+
+            return earthquakes;
+        }
+
+        @Override
+        protected void onPostExecute(List<Earthquake> earthquakes) {
+            if (earthquakes == null) {
+                return;
+            }
+            Log.v("EarthQuakeActivity", "Start update ui");
+            updateUi(earthquakes);
+        }
+    }
+
+
+    /**
+     * To update ui in the asynctask
+     *
+     * @param earthquakes
+     */
+    private void updateUi(List<Earthquake> earthquakes) {
+        mAdapter.clear();
+        if (earthquakes != null) {
+            mAdapter.addAll(earthquakes);
+            mAdapter.notifyDataSetChanged();
+        }
     }
 }
