@@ -15,50 +15,63 @@
  */
 package com.example.android.quakereport;
 
+import android.app.LoaderManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.Loader;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class EarthquakeActivity extends AppCompatActivity {
+public class EarthquakeActivity extends AppCompatActivity implements LoaderManager
+    .LoaderCallbacks<List<Earthquake>> {
 
     /**
      * URL for earthquake data from the USGS dataset
      */
     public static final String USGS_REQUEST_URL = "http://earthquake.usgs" +
         ".gov/fdsnws/event/1/query?format=geojson&eventtype=earthquake&orderby=time&minmag=6" +
-        "&limit=10";
+        "&limit=20";
     public static final String LOG_TAG = EarthquakeActivity.class.getName();
-
+    private static final int EARTHQUAKE_LOADER_ID = 1;
     public List<Earthquake> earthquakes = new ArrayList<>();
     private EarthquakeAdapter mAdapter;
+    private TextView mEmptyStateTextView;
+    private ProgressBar mProgressbarView;
+    private ListView mEarthquakeListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.earthquake_activity);
-        // Create a Async tasks to query the list of earthquake locations.
-        QueryEarthquakeAsyncTask task = new QueryEarthquakeAsyncTask();
-        task.execute(USGS_REQUEST_URL);
 
         // Find a reference to the {@link ListView} in the layout
-        ListView earthquakeListView = (ListView) findViewById(R.id.list);
+        mEarthquakeListView = (ListView) findViewById(R.id.list);
+        // Get the ProgressBar view
+        mProgressbarView = (ProgressBar) findViewById(R.id.loading_spinner);
+        // Get the TextView view
+        mEmptyStateTextView = (TextView) findViewById(R.id.empty_list_view);
 
         // Create a new {@link ArrayAdapter} of earthquakes
         mAdapter = new EarthquakeAdapter(this, earthquakes);
-        // earthquakeListView.setEmptyView(findViewById(R.id.empty_list_view));
-        earthquakeListView.setAdapter(mAdapter);
+
+        mEarthquakeListView.setEmptyView(mEmptyStateTextView);
+        mEarthquakeListView.setAdapter(mAdapter);
+
 
         //Set the listview lister that to monitor click
-        earthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mEarthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Earthquake earthquake = (Earthquake) parent.getItemAtPosition(position);
@@ -67,33 +80,47 @@ public class EarthquakeActivity extends AppCompatActivity {
                 startActivity(browserIntent);
             }
         });
+        //Check if there are internet connection
+        ConnectivityManager connMgr = (ConnectivityManager)
+            getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected()) {
 
+            // Create a Async tasks loader to query the list of earthquake locations.
+            // Get a reference to the LoaderManager, in order to interact with loaders.
+            LoaderManager loaderManager = getLoaderManager();
+            // Initialize the loader. Pass in the int ID constant defined above and pass in null for
+            // the bundle. Pass in this activity for the LoaderCallbacks parameter (which is valid
+            // because this activity implements the LoaderCallbacks interface).
+            loaderManager.initLoader(EARTHQUAKE_LOADER_ID, null, this);
+
+        } else {
+            mProgressbarView.setVisibility(View.GONE);
+            mEmptyStateTextView.setText("No Internet Connection");
+        }
     }
 
+    @Override
+    public Loader<List<Earthquake>> onCreateLoader(int id, Bundle args) {
+        return new EarthquakeLoader(EarthquakeActivity.this, USGS_REQUEST_URL);
+    }
 
-    /**
-     * Async task for the query for earthquake
-     */
-    public class QueryEarthquakeAsyncTask extends AsyncTask<String, Void, List<Earthquake>> {
-
-        @Override
-        protected List<Earthquake> doInBackground(String... urls) {
-            if (urls.length < 1 || urls[0] == null){
-                return null;
-            }
-            earthquakes = QueryUtils.fetchEarthquakeData(urls[0]);
-
-            return earthquakes;
+    @Override
+    public void onLoadFinished(Loader<List<Earthquake>> loader, List<Earthquake> earthquakes) {
+        mEmptyStateTextView.setText(R.string.no_earthquake);
+        mProgressbarView.setVisibility(View.GONE);
+        if (earthquakes == null) {
+            return;
         }
+        Log.v("EarthQuakeActivity", "Start update ui");
+        updateUi(earthquakes);
+    }
 
-        @Override
-        protected void onPostExecute(List<Earthquake> earthquakes) {
-            if (earthquakes == null) {
-                return;
-            }
-            Log.v("EarthQuakeActivity", "Start update ui");
-            updateUi(earthquakes);
-        }
+    @Override
+    public void onLoaderReset(Loader<List<Earthquake>> loader) {
+        updateUi(new ArrayList<Earthquake>());
+        Log.v("EarthQuakeActivity", "Start onLoaderReset");
+
     }
 
 
